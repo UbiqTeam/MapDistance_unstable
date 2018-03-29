@@ -8,6 +8,7 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.location.Location;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
@@ -153,6 +154,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         final MarkerOptions markerOptions = new MarkerOptions();
+
         setupMap();
 
         mode.setOnClickListener(new View.OnClickListener() {
@@ -180,6 +182,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 coorList.clear();
                 totalArea = 1;
                 switchState = mode.isChecked();
+                if (!mode.isChecked()) {
+                    drop.setVisibility(View.VISIBLE);          //clear in GPS mode reverts lock to drop
+                    setMarker.setVisibility(View.GONE);
+                }
             }
         });
 
@@ -190,7 +196,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             public void onClick(View view) {
                 if (!mode.isChecked()) {
-                    MarkerOptions markerOptions = new MarkerOptions();
                     try {
                         location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                     } catch (SecurityException e) {
@@ -198,19 +203,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                     LatLng newLatLng = new LatLng(location.getLatitude(), location.getLongitude());         //get GPS lat/long
                     markerOptions.position(newLatLng);
-                    coorList.add(newLatLng);
                     marker = mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).draggable(true));  //create marker
 
                     drop.setVisibility(View.GONE);          //switches drop marker to lock marker
                     setMarker.setVisibility(View.VISIBLE);
-                    //handleMarkers(markerOptions, marker);
                 }
 
             }
         });
 
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {     //drag
-            MarkerOptions markerOptions = new MarkerOptions();
+
 
             @Override
             public void onMarkerDragStart(Marker marker) {
@@ -232,11 +235,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         setMarker.setOnClickListener(new View.OnClickListener() {  //lock GPS marker
             public void onClick(View view) {
-                markers.add(marker);
                 markerOptionsList.add(markerOptions);
+                handleMarkers(markerOptions, marker);
+
                 LatLng tmp = markerOptions.getPosition();
                 coorList.add(tmp);
-                handleMarkers(markerOptions, marker);
                 drop.setVisibility(View.VISIBLE);
                 setMarker.setVisibility(View.GONE);
 
@@ -250,6 +253,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onMapClick(final LatLng latLng) {
+                Log.d("manual","test");
                 if(!button) {           //prevent issue #1
                     if (mode.isChecked()) {         //if in manual mode
                         final List<Marker> tmpMarkers = new ArrayList<>();
