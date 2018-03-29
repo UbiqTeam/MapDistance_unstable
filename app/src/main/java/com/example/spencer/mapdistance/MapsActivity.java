@@ -51,7 +51,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     final List<Double> distances = new ArrayList<>();                   //list of distances between markers in meters
     final List<LatLng> coorList = new ArrayList<>();                    //list of marker coordinates
 
-    int count = -1;
+    //int count = 1;
     double totalArea = 1.0;
     Boolean switchState = true;
     Marker marker = null;
@@ -67,13 +67,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.clear();
         }
 
-        if (markers.size() > 1) {
-            double distance = SphericalUtil.computeDistanceBetween(markers.get(count).getPosition(), markers.get(count + 1).getPosition());  //for markers 1-4 find distance & area
-            distances.add(distance);
-            areaText.setText("Area (sq m): " + totalArea);
-        }
-
         if (markers.size() == 4) {
+            for(int i = 0; i < markers.size()-1; i++ ){
+                double distance = SphericalUtil.computeDistanceBetween(markers.get(i).getPosition(), markers.get(i+1).getPosition());  //for markers 1-4 find distance & area
+                distances.add(distance);
+            }
             double distance = SphericalUtil.computeDistanceBetween(markers.get(3).getPosition(), markers.get(0).getPosition());               //find distance between 4th and 1st marker
             distances.add(distance);
             area = mMap.addPolygon(new PolygonOptions().add(markers.get(0).getPosition(), markers.get(1).getPosition(), markers.get(2).getPosition(),       //draw square
@@ -84,14 +82,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             totalArea = computeArea(distances);                                             //computer area based on distances list
             distances.clear();                                                              //clear distances list
             coorList.clear();                                                               //clear coordinates list
-            count = -2;                                                                     //initialize count
             areaText.setText("Area (sq m): " + totalArea);
         } else {
             lengthsText.setText("");
         }
 
         mMap.addMarker(markerOptions);                                                      //add marker through markerOptions to map
-        count++;
     }
 
     public double computeArea(List<Double> distances) {
@@ -182,13 +178,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 coordinatesText.setText(" ");
                 distances.clear();
                 coorList.clear();
-                count = -1;
                 totalArea = 1;
                 switchState = mode.isChecked();
             }
         });
 
-        
+
         //////////////////////// GPS Mode ///////////////////////////////////
 
         drop.setOnClickListener(new View.OnClickListener() {                    //drop GPS marker
@@ -241,7 +236,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 markerOptionsList.add(markerOptions);
                 LatLng tmp = markerOptions.getPosition();
                 coorList.add(tmp);
-                //handleMarkers(markerOptions, marker);    //This causes app to crash
+                handleMarkers(markerOptions, marker);
                 drop.setVisibility(View.VISIBLE);
                 setMarker.setVisibility(View.GONE);
 
@@ -249,71 +244,71 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         //////////////////////////////// Manual Mode ////////////////////////////////////////
-            mMap.setOnMapClickListener(new OnMapClickListener() {
-                Boolean button = false;         //disables onClick to set new latlng after a marker has been dropped, but before it's locked (causes crash otherwise see issue #1)
-                Marker marker = null;
+        mMap.setOnMapClickListener(new OnMapClickListener() {
+            Boolean button = false;         //disables onClick to set new latlng after a marker has been dropped, but before it's locked (causes crash otherwise see issue #1)
+            Marker marker = null;
 
-                @Override
-                public void onMapClick(final LatLng latLng) {
-                    if(!button) {           //prevent issue #1
-                        if (mode.isChecked()) {         //if in manual mode
-                            final List<Marker> tmpMarkers = new ArrayList<>();
-                            final MarkerOptions markerOptions = new MarkerOptions();
+            @Override
+            public void onMapClick(final LatLng latLng) {
+                if(!button) {           //prevent issue #1
+                    if (mode.isChecked()) {         //if in manual mode
+                        final List<Marker> tmpMarkers = new ArrayList<>();
+                        final MarkerOptions markerOptions = new MarkerOptions();
 
-                            if (!button) {   //prevents onClick input while manipulating marker (issue #1)
-                                markerOptions.position(latLng);
-                                marker = mMap.addMarker(new MarkerOptions().position(new LatLng(latLng.latitude, latLng.longitude)).draggable(true));  //create marker
-                                button = true;  //since marker is created onClick is re-enabled
+                        if (!button) {   //prevents onClick input while manipulating marker (issue #1)
+                            markerOptions.position(latLng);
+                            marker = mMap.addMarker(new MarkerOptions().position(new LatLng(latLng.latitude, latLng.longitude)).draggable(true));  //create marker
+                            button = true;  //since marker is created onClick is re-enabled
+                        }
+
+
+                        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+                            @Override
+                            public void onMarkerDragStart(Marker marker) {
+                                button = false;
                             }
 
+                            @SuppressWarnings("unchecked")
+                            @Override
+                            public void onMarkerDragEnd(Marker arg0) {
 
-                            mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
-                                @Override
-                                public void onMarkerDragStart(Marker marker) {
-                                    button = false;
+                                marker = mMap.addMarker(new MarkerOptions().position(new LatLng(arg0.getPosition().latitude, arg0.getPosition().longitude)).draggable(true));
+                                LatLng newLatLng = new LatLng(arg0.getPosition().latitude, arg0.getPosition().longitude);
+                                markerOptions.position(newLatLng);
+                                button = true;
+
+                            }
+
+                            @Override
+                            public void onMarkerDrag(Marker arg0) {
+                            }
+                        });
+
+                        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {  //remove a marker
+                            @Override
+                            public boolean onMarkerClick(Marker marker) {
+                                button = false;
+                                marker.remove();
+                                return true;
+                            }
+                        });
+
+
+                        setMarker.setOnClickListener(new View.OnClickListener() {
+                            public void onClick(View view) {                    //lock a marker in place
+                                tmpMarkers.add(marker);
+                                markerOptionsList.add(markerOptions);
+                                LatLng tmp = markerOptions.getPosition();
+                                coorList.add(tmp);
+                                if (button) {
+                                    handleMarkers(markerOptions, marker);
                                 }
-
-                                @SuppressWarnings("unchecked")
-                                @Override
-                                public void onMarkerDragEnd(Marker arg0) {
-
-                                    marker = mMap.addMarker(new MarkerOptions().position(new LatLng(arg0.getPosition().latitude, arg0.getPosition().longitude)).draggable(true));
-                                    LatLng newLatLng = new LatLng(arg0.getPosition().latitude, arg0.getPosition().longitude);
-                                    markerOptions.position(newLatLng);
-                                    button = true;
-
-                                }
-
-                                @Override
-                                public void onMarkerDrag(Marker arg0) {
-                                }
-                            });
-
-                            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {  //remove a marker
-                                @Override
-                                public boolean onMarkerClick(Marker marker) {
-                                    button = false;
-                                    marker.remove();
-                                    return true;
-                                }
-                            });
-
-
-                            setMarker.setOnClickListener(new View.OnClickListener() {
-                                public void onClick(View view) {                    //lock a marker in place
-                                    tmpMarkers.add(marker);
-                                    markerOptionsList.add(markerOptions);
-                                    LatLng tmp = markerOptions.getPosition();
-                                    coorList.add(tmp);
-                                    if (button) {
-                                        handleMarkers(markerOptions, marker);
-                                    }
-                                    button = false;
-                                }
-                            });
-                        }
+                                button = false;
+                            }
+                        });
                     }
                 }
-            });
+            }
+        });
     }
 }
