@@ -1,5 +1,6 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
 
@@ -81,7 +82,7 @@
         android:layout_alignBaseline="@+id/modeSwitch"
         android:layout_alignBottom="@+id/modeSwitch"
         android:text="Drop Marker"
-        android:visibility="visible" />
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/setMarkerButton"
@@ -91,17 +92,31 @@
         android:layout_alignBaseline="@+id/modeSwitch"
         android:layout_alignBottom="@+id/modeSwitch"
         android:text="Lock Marker"
-        android:visibility="gone" />
+        android:visibility="visible" />
 
     <Switch
         android:id="@+id/modeSwitch"
+        style="@android:style/Widget.Material.CompoundButton.Switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:switchTextAppearance="@style/TextAppearance.AppCompat.Widget.Button"
-        android:text="GPS Mode"
         android:layout_alignBaseline="@+id/clearButton"
         android:layout_alignBottom="@+id/clearButton"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:switchTextAppearance="@style/TextAppearance.AppCompat.Widget.Button"
+        android:text="GPS Mode"
+        android:textAppearance="@style/TextAppearance.AppCompat.Button"
+        tools:checked="false" />
+
+    <Button
+        android:id="@+id/setMarkerGPS"
+        style="@android:style/Widget.Button.Inset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/drop"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/drop"
+        android:text="Lock Marker"
+        android:visibility="gone" />
 
 
 
